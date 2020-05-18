@@ -14,12 +14,9 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 title: Soarer's musings
-email: oops@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
   Math, data science, or whatever on my mind.
 baseurl: "/blog" # the subpath of your site, e.g. /blog
-url: "https://soarersiuhc.github.io/blog" # the base hostname & protocol for your site, e.g. http://example.com
-twitter_username: qcsoarer
 github_username:  soarersiuhc
 
 # Build settings
@@ -29,7 +26,7 @@ plugins:
   - jekyll-feed
 
 # Variables
-ga-id: UA-166876919-1
+ga_id: UA-166876919-1
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
