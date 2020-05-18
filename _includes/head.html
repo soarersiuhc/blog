@@ -17,4 +17,17 @@
   </script>
   <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  {% if jekyll.environment == 'production' %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{site.ga_id}}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+ 
+    gtag('config', '{{site.ga_id}}');
+  </script>
+  {% endif %}
+
 </head>
