@@ -27,6 +27,8 @@ plugins:
 
 # Variables
 ga_id: UA-166876919-1
+disqus:
+    shortname: soarersiuhc
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
