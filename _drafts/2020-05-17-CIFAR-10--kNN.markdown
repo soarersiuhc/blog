@@ -1,0 +1,15 @@
+---
+layout: post
+title: CIFAR-10 #1 - kNN
+date: 2020-05-17
+categories: data-science ml101 cifar cs231n
+---
+
+To get myself through finishing [CS231n](https://cs231n.github.io/) (finally!), it could be interesting to just play with all the techniques covered in that class, on the [CIFAR-10 data set](https://www.cs.toronto.edu/~kriz/cifar.html). 
+
+In this first post, I am going to cover **k-nearest neighbors (kNN)**. This is impractical for most purposes - some cons I can think of are:
+- It is very slow once your data set gets bigger.
+- The premise of kNN is that two inputs that are "close" should have (largely the) same label. When this is violated too much, kNN is useless. For example,
+  - Metric chosen is bad. A somewhat related point is input may have to be rescaled, if you intend to use "common" metrics such as $L^p$ norm.
+  - Source data is too imbalanced.
+
