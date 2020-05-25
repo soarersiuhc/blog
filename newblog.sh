@@ -22,7 +22,7 @@ do
     esac    
 done
 
-escaped_title=${title//[ :]/-}
+escaped_title=${title//[^[:alnum:]]/-}
 
 # script begins
 if $draft; 
