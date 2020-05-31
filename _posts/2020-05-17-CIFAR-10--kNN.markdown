@@ -1,0 +1,198 @@
+---
+layout: post
+title: CIFAR-10 #1 - kNN
+page_name: 2020-05-17-CIFAR-10--kNN
+date: 2020-05-17
+categories: data-science cs231n
+---
+
+To get myself through finishing [CS231n](https://cs231n.github.io/) (finally!), it could be interesting to just play with all the techniques covered in that class, on the [CIFAR-10 data set](https://www.cs.toronto.edu/~kriz/cifar.html). 
+
+In this first post, I am going to cover **k-nearest neighbors (kNN)**. This is impractical for most purposes - some cons I can think of are:
+- It is very slow once your data set gets bigger.
+- The premise of kNN is that two inputs that are "close" should have (largely the) same label. When this is violated too much, kNN is useless. For example,
+  - Metric chosen is bad. Euclidean metric is the usual metric we pick, and
+    - Input may have to be rescaled. Otherwise components with highest variation for distance will dominate.
+    - Dimension cannot be too high. As dimension increases, the ratio between the nearest and farthest points approaches 1 in probability, and so "nearest neighbors" will be more and more ill-defined as dimension goes up. (An example of curse of dimensionality).
+  - Source data is too imbalanced. kNN depends on majority voting for its nearest neighbors. So if there are too few neighbors of the correct label, just because of the data imbalance, then performance of kNN is affected. (Or that you will be forced to choose a very small $k$, that makes it more prone to overfitting).
+
+## The Math
+
+## Applying kNN to CIFAR-10
+Let us first import CIFAR-10. To speed things up, we will only use 5000 images in training set and 500 images in the test set.
+```python
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import numpy as np
+
+(X_train, y_train), (X_test, y_test) = tf.keras.datasets.cifar10.load_data()
+
+X_train.shape, y_train.shape, X_test.shape, y_test.shape
+```
+  ((50000, 32, 32, 3), (50000, 1), (10000, 32, 32, 3), (10000, 1))
+```python
+n_train = 5000
+n_test = 500
+
+def get_mask(n_total, n_sample):
+  mask = np.zeros(n_total)
+  mask[:n_sample] = 1
+  np.random.shuffle(mask)
+
+  return mask
+
+train_mask = get_mask(len(X_train), n_train)
+test_mask = get_mask(len(X_test), n_test)
+
+X_train_sampled, y_train_sampled = X_train[train_mask == 1], y_train[train_mask == 1]
+X_test_sampled, y_test_sampled = X_test[test_mask == 1], y_test[test_mask == 1]
+
+X_train_sampled.shape, y_train_sampled.shape, X_test_sampled.shape, y_test_sampled.shape
+```
+
+   ((5000, 32, 32, 3), (5000, 1), (500, 32, 32, 3), (500, 1))
+
+---
+
+
+Here is a simple implementation of kNN. It allows both $L^1$ and $L^2$ norm - just so I can compare performance difference - and would evaluate the accuracy of predictions.
+```python
+class KNN:
+  def __init__(self, *, k, dist=None):
+    self.k = k
+    self.dist = dist or "l1"
+
+    assert self.dist in ["l1", "l2"]
+
+    print(f"Using distance: {self.dist}")
+
+  def fit(self, X_train, y_train):
+    self.X_train = X_train
+    self.y_train = y_train
+
+  def predict(self, X_batch):
+    X_batch_expanded = np.expand_dims(X_batch, 1)
+
+    delta = np.abs(self.X_train - X_batch_expanded)
+    if self.dist == "l1":
+      distance = np.sum(delta, axis=(2, 3, 4))
+    elif self.dist == "l2":
+      distance = np.sqrt(np.sum(delta ** 2, axis=(2, 3, 4)))
+    else:
+      raise NotImplementedError(f"Unsupported distance function! dist: {dist}")
+
+    closest_k_indices = np.argsort(distance, axis=1)[:, :self.k]
+    closest_k_labels = np.take_along_axis(
+        self.y_train.reshape(1, -1),
+        closest_k_indices,
+        axis=1
+    )
+
+    def get_most_frequent(arr):
+      bincount = np.bincount(arr)
+      return np.argmax(bincount)
+
+    pred = np.apply_along_axis(
+        get_most_frequent, 1, closest_k_labels
+    ).reshape(-1)
+    ret = pred.reshape(-1)
+
+    return ret
+
+  def evaluate(self, X_test, y_test, batch_size=100, quiet=False):
+    n_sample = X_test.shape[0]
+    n_correct = 0
+
+    batch_idx = 0
+    n_evaluated = 0
+    while batch_idx < n_sample:
+      X_batch, y_batch = X_test[batch_idx:batch_idx + batch_size], y_test.reshape(-1)[batch_idx:batch_idx + batch_size]
+
+      pred_batch = self.predict(X_batch)
+
+      n_evaluated += len(X_batch)
+      n_correct += sum(pred == label for pred, label in zip(pred_batch, y_batch))
+
+      if not quiet:
+        print(f"Evaluated {n_evaluated} samples, {n_correct} labels are correct. Accuracy: {n_correct / n_evaluated}")
+
+      batch_idx += batch_size
+
+    accuracy = n_correct / n_evaluated
+    return accuracy
+```
+
+Now let's try it out! We start with 1-NN with $L^1$-norm to make sure things look okay.
+```python
+l1_mod = KNN(k=1)
+l1_mod.fit(X_train_sampled, y_train_sampled)
+```
+
+Using distance: l1
+
+```python
+l1_mod.predict(X_test_sampled[:3])
+```
+
+array([1, 0, 9])
+
+```python
+l1_mod.evaluate(X_test_sampled, y_test_sampled, batch_size=100)
+```
+
+Evaluated 100 samples, 23 labels are correct. Accuracy: 0.23
+Evaluated 200 samples, 50 labels are correct. Accuracy: 0.25
+Evaluated 300 samples, 78 labels are correct. Accuracy: 0.26
+Evaluated 400 samples, 99 labels are correct. Accuracy: 0.2475
+Evaluated 500 samples, 114 labels are correct. Accuracy: 0.228
+0.228
+
+---
+
+
+Great! Things seem to work. Let's compare the performance of kNN as $k$ varies, and norms change ($L^1$ or $L^2)$
+
+```
+list_k = list(range(1, 11))
+```
+```
+l1_eval = []
+
+for k in list_k:
+  mod = KNN(k=k, dist="l1")
+  mod.fit(X_train_sampled, y_train_sampled)
+
+  accuracy = mod.evaluate(X_test_sampled, y_test_sampled, batch_size=100, quiet=True)
+  l1_eval.append(accuracy)
+```
+```
+l2_eval = []
+
+for k in list_k:
+  mod = KNN(k=k, dist="l2")
+  mod.fit(X_train_sampled, y_train_sampled)
+
+  accuracy = mod.evaluate(X_test_sampled, y_test_sampled, batch_size=100, quiet=True)
+  l2_eval.append(accuracy)
+```
+```
+fig, ax = plt.subplots()
+
+ax.plot(list_k, l1_eval, label="l1 distance")
+ax.plot(list_k, l2_eval, label="l2 distance")
+ax.set(
+    title="Accuracy of kNN",
+    xlabel="k",
+    ylabel="Accuracy"
+)
+
+plt.legend()
+plt.show()
+```
+
+![png]({{site.baseurl}}/assets/{{page.page_name}}/eval.png)
+
+---
+
+
+So it looks like 1-NN with $L^1$ distance works best here. The accuracy is quite dismal though: we beat the baseline of random labels (0.1, since there are 10 labels), but [state of the art can do >99% on CIFAR-10.](https://benchmarks.ai/cifar-10)
