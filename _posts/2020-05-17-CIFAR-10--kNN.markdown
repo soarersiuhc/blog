@@ -1,6 +1,6 @@
 ---
 layout: post
-title: CIFAR-10 #1 - kNN
+title: "CIFAR-10 #1 - kNN"
 page_name: 2020-05-17-CIFAR-10--kNN
 date: 2020-05-17
 categories: data-science cs231n
@@ -10,13 +10,12 @@ To get myself through finishing [CS231n](https://cs231n.github.io/) (finally!), 
 
 In this first post, I am going to cover **k-nearest neighbors (kNN)**. This is impractical for most purposes - some cons I can think of are:
 - It is very slow once your data set gets bigger.
+  - It's worth mentioning that suitable data structure such as [kd tree](https://en.wikipedia.org/wiki/K-d_tree) can speed this up, though I did not try to benchmark this.
 - The premise of kNN is that two inputs that are "close" should have (largely the) same label. When this is violated too much, kNN is useless. For example,
   - Metric chosen is bad. Euclidean metric is the usual metric we pick, and
     - Input may have to be rescaled. Otherwise components with highest variation for distance will dominate.
     - Dimension cannot be too high. As dimension increases, the ratio between the nearest and farthest points approaches 1 in probability, and so "nearest neighbors" will be more and more ill-defined as dimension goes up. (An example of curse of dimensionality).
   - Source data is too imbalanced. kNN depends on majority voting for its nearest neighbors. So if there are too few neighbors of the correct label, just because of the data imbalance, then performance of kNN is affected. (Or that you will be forced to choose a very small $k$, that makes it more prone to overfitting).
-
-## The Math
 
 ## Applying kNN to CIFAR-10
 Let us first import CIFAR-10. To speed things up, we will only use 5000 images in training set and 500 images in the test set.
@@ -195,4 +194,50 @@ plt.show()
 ---
 
 
-So it looks like 1-NN with $L^1$ distance works best here. The accuracy is quite dismal though: we beat the baseline of random labels (0.1, since there are 10 labels), but [state of the art can do >99% on CIFAR-10.](https://benchmarks.ai/cifar-10)
+So it looks like 1-NN with $L^1$ distance works best here. The accuracy is quite dismal though: we beat the baseline of random labels (0.1, since there are 10 labels), but [state of the art can do >99% on CIFAR-10.](https://benchmarks.ai/cifar-10). This is not unexpected, given that
+
+- Euclidean distance between RGB seems fairly meaningless. Two pictures are likely the "same" if we rotate it, adjust the color/saturation/hue, change foreground/background - but all these are considered different under euclidean distance between RGB pixels.
+- The dimension of each picture $3072 = 32 \times 32 \times 3$ is likely too high, and curse of dimensionality already kicks in.
+
+
+## The Math: kNN from a Bayesian viewpoint
+
+kNN can be considered a discriminative model, where we model $p(x\vert \text{class = i})$.
+
+Let's start with a more generic situation. Suppose $X_1,\cdots,X_n$ are i.i.d. samples of the probability density $p(x)$ on $\mathbb{R}^N$. Fix a point $x_0$ - we wish to estimate $p(x_0)$. Consider a small neighborhood $R$ around $x_0$. Then the probability of drawing points in $R$ is 
+
+$$\mathbb{P}\left(X \sim p, X \in R \right) = \int_R p(x) dx$$
+
+- On one hand, if we assume that $f$ is basically constant on $R$, then $\int_R p(x) dx \approx p(x_0) vol(R)$.
+- On the other hand, since we already have $n$ samples from $p$, we may also estimate the probability by $\frac{\text{Number of sampled points in $R$}}{n}$.
+
+Thus we have
+
+$$p(x_0) vol(R) \approx \int_R p(x) dx \approx \frac{\text{Number of sampled points in $R$}}{n} \Rightarrow p(x_0) \approx \frac{\text{Number of sampled points in $R$}}{n \cdot vol(R)}$$
+
+Let's specialize the situation to the classification problem at hand. Let us fix $k$, and assume that for $i = 1, \cdots, k$, we have probability density $p(x \vert \text{class = $i$}) := p_i(x)$ of drawing a point of class $i$. Assume that
+
+- Each point must have a label, i.e. $\sum_i p_i(x) = 1$.
+- For each $x$, each density $p_i(x)$ is basically constant on the small neighborhood containing $k$ nearest points to $x$.
+- Number of samples in each class is big enough, so that $\frac{\text{Number of class $i$ points in $R$}}{\text{Number of class $i$ points}}$ is a good estimate of $\mathbb{P}\left(X \sim p_i(x), X \in R\right)$
+
+Then both probability estimates above hold, meaning that for fixed $x_0$ and class $i$,
+
+$$p_i(x_0) vol(R) \approx \int_R p_i(x) dx \approx \frac{k_i}{n_i}$$
+
+Here $n_i$ is the total number of points of class $i$, and $k_i$ is the number of points of class $i$, among the $k$ nearest points to $x_0$. In particular this implies
+
+$$p_i(x_0) \approx \frac{k_i}{n_i vol(R)}$$
+
+Note also that $p(\text{class = i})$ can be estimated by $\frac{n_i}{n}$, where $n = \sum n_i$ is the total number of points. By Bayes' theorem, we thus have
+
+$$p(\text{class = i} \vert x) = \frac{p_i(x) p(\text{class = i})}{p(x)} = \frac{p_i(x) p(\text{class = i})}{ \sum_i p_i(x) p(\text{class = i})} \approx \frac{\frac{k_i}{n_i vol(R)} \cdot \frac{n_i}{n}}{\sum \frac{k_i}{n_i vol(R)} \cdot \frac{n_i}{n}} = \frac{k_i}{\sum k_i} = \frac{k_i}{k}$$
+
+This is exactly the kNN algorithm!
+
+**Remark** It is interesting to recover $p(x)$ based on finite samples - this is the problem of [kernel density estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation). Our method above gives us a way to estimate the density, if we take $R$ to be the smallest closest ball containing the $k$ nearest neighbors of $x_0$. This is not a good method however, because
+
+- Tail may be too heavy, since estimated density decays like $\frac{1}{vol(\text{ ball of radius $x$})}$ as $x \to \infty$. In one dimension the resulting estimate is not even a density because of this.
+- Resulting density is very discontinuous - discontinuity always happens in "transition regions" of nearest neighbors.
+
+(See e.g. [here](http://www.cs.haifa.ac.il/~rita/ml_course/lectures/KNN.pdf for illustration of resulting estimates) In any case, it is still of interest to know the basic quality measures of the resulting estimates: bias an variance. For 1 dimension it's documented [here](http://faculty.washington.edu/yenchic/18W_425/Lec7_knn_basis.pdf). Based on that the optimal $k$ should be of the scale $n^{4/5}$, although it seems like the rule of thumb is $\sqrt{n}$ from multiple sources I have seen. In practice though, best $k$ is likely obtained by cross validation instead.
