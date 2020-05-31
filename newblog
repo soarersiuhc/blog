@@ -17,7 +17,7 @@ do
     case "$KEY" in
             --title)            title=${VALUE} ;;
             --date)             date=${VALUE} ;;     
-            --draft)            draft=true ;;     
+            --draft | --drafts)            draft=true ;;     
             *)   
     esac    
 done
@@ -35,7 +35,7 @@ fi
 echo "Copying template to ${loc}"
 cp _ignore/template.markdown $loc
 sed -i "" -e "
-s/{{title}}/$title/g
+s/{{title}}/\"$title\"/g
 s/{{page_name}}/$escaped_title/g
 s/{{date}}/$date/g
 " $loc
