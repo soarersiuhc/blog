@@ -36,5 +36,6 @@ echo "Copying template to ${loc}"
 cp _ignore/template.markdown $loc
 sed -i "" -e "
 s/{{title}}/$title/g
+s/{{page_name}}/$escaped_title/g
 s/{{date}}/$date/g
 " $loc
