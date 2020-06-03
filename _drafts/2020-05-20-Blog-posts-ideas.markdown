@@ -10,3 +10,7 @@ Statistics:
 - Go through basic probability/stats
 - Basic modeling
   - case studies with kaggle
+ 
+CS 231n:
+  - Linear methods: LDA (and relationship with ANOVA)
+  - retry all algorithms using pre-trained embeddings, e.g. ImageNet
