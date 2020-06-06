@@ -14,3 +14,14 @@ Statistics:
 CS 231n:
   - Linear methods: LDA (and relationship with ANOVA)
   - retry all algorithms using pre-trained embeddings, e.g. ImageNet
+
+Machine learning:
+- Autoencoders, VAE
+- Some justification of embeddings based method and their linearity
+  - [Representation Learning: A Review and New Perspectives](https://arxiv.org/pdf/1206.5538.pdf) is a very very good read, on what "good" embeddings should look like
+- Details of boosting/bagging/decision tree/gbdt etc
+
+Misc:
+- Compressed sensing
+- Simplex algorithm
+- Optimization techniques
