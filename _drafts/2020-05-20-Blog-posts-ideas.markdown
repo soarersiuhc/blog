@@ -11,6 +11,7 @@ Statistics:
 - Go through basic probability/stats
 - Basic modeling
   - case studies with kaggle
+- The idea of factors/hierarchy, e.g. ANOVA?
  
 CS 231n:
   - Linear methods: LDA (and relationship with ANOVA)
