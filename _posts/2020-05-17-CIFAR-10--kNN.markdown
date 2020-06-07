@@ -2,7 +2,7 @@
 layout: post
 title: "CIFAR-10 #1 - kNN"
 page_name: 2020-05-17-CIFAR-10--kNN
-date: 2020-05-17
+date: 2020-06-06
 categories: data-science cs231n
 ---
 
@@ -18,6 +18,9 @@ In this first post, I am going to cover **k-nearest neighbors (kNN)**. This is i
   - Source data is too imbalanced. kNN depends on majority voting for its nearest neighbors. So if there are too few neighbors of the correct label, just because of the data imbalance, then performance of kNN is affected. (Or that you will be forced to choose a very small $k$, that makes it more prone to overfitting).
 
 ## Applying kNN to CIFAR-10
+
+[View notebook at Binder](https://mybinder.org/v2/gh/soarersiuhc/blog/6a84bc07aa2bdeaaa6493b5dd4cfaa3e0836ca96?filepath=_notebooks%2Fcs231n_nearest_neighbors.ipynb)
+
 Let us first import CIFAR-10. To speed things up, we will only use 5000 images in training set and 500 images in the test set.
 ```python
 import tensorflow as tf
