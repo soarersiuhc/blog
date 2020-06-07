@@ -5,6 +5,7 @@ date: 2020-05-20
 categories: 
 ---
 Statistics:
+- GLM, canonical link functions, with many examples
 - stratification
 - Fieller test
 - Go through basic probability/stats
