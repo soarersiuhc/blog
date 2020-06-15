@@ -238,6 +238,8 @@ For future reference, here's the gradient of the cross entropy loss. Since my in
 
 ## Applying logistic regression to CIFAR-10
 
+[View notebook on binder](https://mybinder.org/v2/gh/soarersiuhc/blog/master?filepath=_notebooks%2Fcs231n_softmax.ipynb)
+
 Let's code! Logistic regression is implemented in most APIs, so I am not going to implement it from scratch. I will use tensorflow and explore a few questions:
 
 - Do we need to normalize the input by dividing by 255, or centering then normalize by standard deviation?
