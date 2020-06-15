@@ -260,21 +260,21 @@ To answer the questions above:
 1. Do we need to normalize the input by dividing by 255, or centering then normalize by standard deviation?
   - For gradient methods to work well, we generally want gradients to stay a bit away from zero to avoid the [vanishing gradient problem](https://en.wikipedia.org/wiki/Vanishing_gradient_problem). Normalizing inputs to the "activation" region of the softmax function would help this happen [link](https://stats.stackexchange.com/questions/51012/must-i-normalize-inputs-into-a-perceptron-that-uses-a-sigmoid-activation-functio). In this case, normalizing to $[0,1]$ would be sufficient.
   - Empirically, looks like normalization definitely does better. The best model without normalizing input has an accuracy of ~0.3, while most models normalizing input does better than that, with the best one achieving an accuracy of 0.37.
-    ![png]({{site.baseurl}}/assets/{{page.page_name}}/normalization.png)
+    ![png]({{site.baseurl}}/assets/{{page.page_name}}/normalization.png){: .center-image }
 2. How do different optimizers affect things?
   - The biggest drawback of SGD is that learning rate is uniform for all parameters, which means picking an optimal learning rate (whatever that means) is difficult.
   - Adaptive algorithms try to resolve this by keeping a per-parameter learning rate instead. This means default learning rate often works sufficiently well, so less tuning.
   - However, the NIPS paper [The marginal value of adaptive gradient methods in machine learning](https://arxiv.org/abs/1705.08292) suggests that adaptive methods generalizes worse than SGD. There is also a nice [blog post](https://shaoanlu.wordpress.com/2017/05/29/sgd-all-which-one-is-the-best-optimizer-dogs-vs-cats-toy-experiment/) that supports this conclusion.
   - Empirically here, SGD/Adam looks fairly similar to me.
-    ![png]({{site.baseurl}}/assets/{{page.page_name}}/optimizer.png)
+    ![png]({{site.baseurl}}/assets/{{page.page_name}}/optimizer.png){: .center-image }
 3. How does the number of epochs affect things?
   - It seems like as epoch increases, the variance of accuracy increases when we vary over other hyperparameters.
   - There doesn't seem to be too much gain in increasing epoch in this case. The best model with 1 epoch has accuracy ~0.364, while the best model with 4 epochs has accuracy ~0.374. 
-    ![png]({{site.baseurl}}/assets/{{page.page_name}}/epoch.png)
+    ![png]({{site.baseurl}}/assets/{{page.page_name}}/epoch.png){: .center-image }
 4. How does regularization affect things? We use $L^2$-regularization here, so let's see if regularization helps by checking performance with no regularization (weight = 0) vs different settings of regularization weights.
   - The best model without regularization has accuracy ~0.369, not far off from best model ~0.374 with regularization weight 0.0001. I didn't look into the variance of these models, but I would assume the gain here is too small to be a conclusive gain.
   - On the contrary, a regularization weight of 0.1 is likely too big. The best model with such weight has accuracy ~0.3, which is a pretty big dropoff.
-    ![png]({{site.baseurl}}/assets/{{page.page_name}}/regularization.png)
+    ![png]({{site.baseurl}}/assets/{{page.page_name}}/regularization.png){: .center-image }
 
 # Footnotes
 [^1]: Details
