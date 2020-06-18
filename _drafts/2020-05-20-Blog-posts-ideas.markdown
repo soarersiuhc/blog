@@ -16,6 +16,9 @@ Statistics:
 CS 231n:
   - Linear methods: LDA (and relationship with ANOVA)
   - retry all algorithms using pre-trained embeddings, e.g. ImageNet
+  - Blurbs:
+    - Subgradient method
+    - KL divergence (entropy gained from prior to posterior?)
 
 Machine learning:
 - Autoencoders, VAE
