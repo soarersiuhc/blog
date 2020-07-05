@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "CIFAR-10 #2 - Linear classifiers: Multinomial regression"
+title: "CIFAR-10 #2a - Linear classifiers: Multinomial regression"
 page_name: CIFAR-10--2---Linear-classifiers--Multinomial-regression
 date: 2020-06-14
 categories: data-science cs231n
