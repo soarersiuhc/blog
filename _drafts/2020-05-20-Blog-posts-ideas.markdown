@@ -16,6 +16,9 @@ Statistics:
 CS 231n:
   - Linear methods: LDA (and relationship with ANOVA)
   - retry all algorithms using pre-trained embeddings, e.g. ImageNet
+  - Thoughts:
+    - Does image gradient help?
+      - e.g. image gradient effectively enlarges training set for free?
   - Blurbs:
     - Subgradient method
     - KL divergence (entropy gained from prior to posterior?)
