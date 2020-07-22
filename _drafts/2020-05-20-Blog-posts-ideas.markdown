@@ -30,6 +30,7 @@ Machine learning:
 - Details of boosting/bagging/decision tree/gbdt etc
 - Isolation forest in anomaly detection
 - Linear programming; simplex method
+- Restricted Boltzman machine
 
 Misc:
 - Compressed sensing
