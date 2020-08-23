@@ -1,0 +1,130 @@
+Reference: https://cs231n.github.io/convolutional-networks/
+
+---
+
+- Overview:
+    - Why neural net?
+        - The most natural/simple classification model is a linear model (e.g. logistic regression). Two problems though:
+            - linear approximation may be too coarse/many real models are nonlinear. 
+            - The given input may not be in the right form. We may need to do some feature extraction, after which perhaps a linear model is reasonable. One example is images - RGB data at pixel data is not "semantic" for sure.
+                - This switches the problem to modeling the feature extraction function, for which a linear model can be a reasonable first approximation.
+        - These two problems suggest that "stacking" linear models is beneficial, as it both increases model complexity/plays the role of feature extraction.
+            - If we think of a linear model as a "score" for how strong a feature is/whether a feature is present, then one sees the need of normalizing this score/truncate it if the feature is likely unpresent. This is one way to think about activation functions.
+        - This basically gives us the backbone of neural nets, which is effectively stacking of linear models. The next question is architecture, that determines which neurons should be connected/what are the input variables of each linear model.
+            - The laziest way is to do all possible connections, and pray that the training process would make the unnecessary connections disappear (weight 0). This is the idea of fully connected layer.
+            - Alternatively, for the specific problem at hand, perhaps a specific architecture would be better. The choice of architecture seems to be from experience/human intuition on what the model/feature extraction should look like.
+    - Why CNN?
+        - For image recognition problems, one way to extract features is to look locally.
+            - e.g. "top left" is a line, "bottom right" is all red.
+           - Such extracted features should be stackable.
+               - e.g. "top left" looks like an ear, "bottom right" looks like a door. These more complicated shapes (ear/door) can be determined by e.g. lines/colors in the shape.
+       - Also realistically, fully connected network may give us too many parameters to train, since there are usually too many input parameters to start with. For example, 224 x 224 image may have 150k parameters already (224 x 224 x 3, if given in RGB form), meaning that if there's $n$ node in the first layer, there will be $150k \cdot n$ nodes to train on.
+       - CNN is formalizing the idea of look locally via filters.
+- Layers:
+    - The general strategy is to use convolutional layers (and perhaps pooling layers) for feature extraction, then use fully connected layers on these extracted features.
+        - Convolutional layers is the look locally idea above.
+        - Pooling layers is a way to reduce dimension, by merging/pooling data from nearby pixels. This of course causes information loss, and seems to be going out of flavor (or so the notes say).
+    - Terminologies
+        - Input
+            - input volume = dimensions of the input, e.g. [32x32x3]
+            - Spatial dimensions = width/height of the input (for 2D images), e.g. [32x32]
+            - Depth = number of "features" per point in spatial dimensions, e.g. 3
+                - Use of features here is non-standard but I like it more. People may call this number of filters.
+    - Convolutional layers
+        - Blocks 
+            - A $k x k$ block is a contiguous $k x k$ region in the spatial dimensions, e.g. for an image of volume [32x32x3], a 2x2 block has volume [2x2x3]
+                - We generally take all the features, hence the last dimension is the same.
+                - The notes assume all blocks are squares. Arbitrary shapes should be fine as well, but the math is likely unclean.
+            - A $k x k$ filter is the real-valued function originating from a $k x k$ block (or really $[k x k x D]$, remember the third dimension as well, which is the feature for each point of the $k x k$ block.
+                - Think of it as a feature generator (usually via linaer model) for each block. For example, a detector of line/color patches etc if the input layer is raw pixels, or more sophisticated features such as ear/door detector for later layers.
+                - Multiple features can be extracted for each $k x k$ blocks. Equivalently, multiple filters can be applied to the same $k x k$ block. 
+            - Terminologies
+                - A depth column/fibre is all the features for a point in spatial dimension. e.g. for a point $(x,y)$ in spatial dimension, this is the $1 x 1 x D$ vector $(x, y, features)$.
+                - A depth slice is to fix a feature, and look at all the values for that feature in the spatial dimension. e.g. for a feature $d$, this is the $k x k x 1$ vector.
+            - Next question is how many filters we should apply. Generally we slide the filters horizontally/vertically.
+                - A stride is the amount we slide the filter by, e.g. if stride is 1, we move the filters one pixel at a time.
+                - What happens at boundary? If we force the filter to stay within the border of image, then we likely lose information at the boundary. We can pad by zeros to address this.
+            - With the use of zero padding, the translates of filters should be a tight fit (at the border after zero-padding). 
+                - (Dimension here is always one-dimensional, with the assumption that filters are always squares, e.g. a filter size of $F$ means a $F x F$ filter)
+                - Let $W$ be spatial dimension of input (e.g. $W$ if input volume is $[W x W x D]$), $F$ be the filter size, $S$ be the stride, $P$ the zero padding used at each side of the border. Then number of strides is $$\frac{W - F + 2P}{S} + 1.$$
+                    - **Note**: It's common for output volume to have same spatial dimension as input volume, so that's a constraint on $W,F,S$ here. ($P$ should be thought of as a filler to make sure the fit is tight, aka the number of strides above is an integer)
+        - Parameter sharing
+            - If we think of filters as detectors, e.g. a line detector, then the weights for this filter should be invariant under strides. In the case where the same filters are applied to all $k x k$ blocks, all weights of the "same" filter are shared.
+            - Sometimes we may not want this, e.g. if we knew a priori that features we should extract for top left and bottom right of images are different. We may want to relax the parameter sharing scheme in that case - such layer is called a **locally connected layer**.
+        - Example
+            - Suppose input images have volume [227 x 227 x 3] (spatial dimension 227 x 227 and RGB colors). 
+            - Suppose we use block size of [11 x 11], stride 4, and no zero padding.
+            - Suppose we use the same 96 filters for each block. (i.e. a filter has same weight regardless of the block)
+            - Then since $\frac{227 - 11}{4} + 1 = 55$, we have 55 x 55 blocks. Since there are 96 filters for each block, output volume is [55 x 55 x 96].
+            - Number of parameters?
+                - Each filter has [11 x 11 x 3] = 363 weights and 1 bias.
+                - 96 filters give 364 x 96 = 35k parameters.
+                    - Note: much fewer than ([227 x 227 x 3] + 1) x [55 x 55 x 96] parameters for fully connected layer, because a priori we know input size is [11 x 11 x 3] + 1 for each block.
+                    - Note: if we use CNN without parameter sharing, this would still be ([11 x 11 x 3] + 1) x [55 x 55 x 96] = 105M parameters which is a lot.
+        - Implementation
+            - Forward pass: matrix multiplication
+                - Example
+                   - Suppose input images have volume [227 x 227 x 3] (spatial dimension 227 x 227 and RGB colors). 
+                   - Suppose we use block size of [11 x 11], stride 4, and no zero padding.
+                   - Suppose we use the same 96 filters for each block. (i.e. a filter has same weight regardless of the block)
+                   - Then since $\frac{227 - 11}{4} + 1 = 55$, we have 55 x 55 blocks. Since there are 96 filters for each block, output volume is [55 x 55 x 96].
+                   - There are 55 x 55 = 3025 blocks, with each block carry information of size [11 x 11 x 3] = 363. We can think of this as a [3025 x 363] matrix.
+                   - A filter is a linear map from $\mathbb{R}^{363} \to \mathbb{R}$, and can be thought of as matrix multiplication by a 363 x 1 vector. Applying 96 filters can be put together as multiplying by a 363 x 96 matrix. 
+                   - Output is then the matrix product [3025 x 363] x [363 x 96] matrix = [3025 x 96] matrix. We can reshape it back to [55 x 55 x 96].
+            - Backprop
+                - Backprop of convolution is also convolution, and so can be implemented the same way.
+                - **[TODO]** write this up.
+        - Miscellaneous
+            - 1x1 convolution: effectively means for each point in spatial dimension, combine the existing features in some way (say linearly).
+            - Dilated convolution: So far a filter act on all points in spatial dimension. It doesn't have to, if you have good reasons to do so. e.g. a dilation filter of size $d$ acts on points with coordinates $\equiv 0 \mod d$ in the block. Equivalently, we are forcing weights with coordinates $\not\equiv 0 \mod d$ to be zero.
+    - Pooling layers
+        - Effectively combine features of nearby spatial points, as a measure to reduce input volume size/reduce overfitting.
+        - What to combine?
+            - Same language of blocks/filters/stride apply.
+            - Uncommon to do zero padding here. (Probably because boundary information is diluted if we zero pad).
+        - How to combine?
+            - Pooling refers to the combination scheme.
+                - e.g. max pooling = for each feature, take max value of the whole block.
+                - e.g. average pooling = for each feature, take the average value of the whole block.
+            - Doesn't change number of features (aka depth), only reduced the spatial dimension. 
+        - Implementation
+            - Forward pass
+                - Suppose input images have volume [227 x 227 x 3] (spatial dimension 227 x 227 and RGB colors). 
+                - Suppose we use block size of [11 x 11], stride 4, and no zero padding.
+                - Then since $\frac{227 - 11}{4} + 1 = 55$, we have 55 x 55 blocks.
+                - There are 55 x 55 = 3025 blocks, with each block carry information of size [11 x 11 x 3] = 363. We can think of this as a [[55 x 55] x [11 x 11 x 3]] tensor.
+                - Let's say we do average pooling. This means for each of the 3 features, we average the feature values of the [11 x 11] block. We are effectively averageing the [11 x 11] dimensions for the [55 x 55 x 11 x 11 x 3] tensor.
+            - Backprop
+                - **[TODO]** Think about what this looks like.
+- Architecture
+    - Most common form is of the shape
+        - INPUT -> [[CONV -> RELU]*N -> POOL?]*M -> [FC -> RELU]*K -> FC
+        - POOL? means maybe we do pooling (remember that pooling is falling out of favor)
+        - Usually $N \leq 3$, $K \leq 2$.
+    - In appiled setting, extremely unlikely you would start architecting from scratch. Can follow state of the art by whatever works best on ImageNet.
+- Hyperparameter choices
+    - Input layer should have dimension divisible by 2 many times.
+        - This is likely because pooling of stride 2 is used historically. May not apply anymore.
+        - Common dimensions: 32, 64, 96, 224, 384, 512
+    - Convolutional layers
+        - Use small filters (usually at most 5x5)
+            - Prefer stacking of small filters over one single big filter - this allows nonlinear feature extraction with same support.
+            - Big filter may happen (e.g. 7x7), but generally only on first layer.
+        - Stride is small, say 1.
+        - May need to compromise because of memory constraints
+            - GPU is often bottlenecked by memory.
+            - Stride 1 effectively means output spatial dimension is on the same scale as input dimension, which may cause memory to blow up fast. Similar for small filter size. Hence the first layer often aggressively cut down information.
+                - e.g. ZFNet first layer has 7x7 filter with stride 2.
+                - e.g. AlexNet first layer has 11x11 filter with stride 4.
+    - Pooling layers
+        - **Note**: Pooling layers falling out of favor.
+            - Many think we can get away without using pooling, e.g. rather than using pooling, can use convolution layers with larger strides once in a while to reduce spatial dimensions.
+            - Discard pooling layers were found to be important in training VAE/GAN.
+        - Use small filter (filter size 2x2) to reduce information loss
+        - Use small stride (say 2) to reduce information loss
+        - Max pooling preferred over average pooling.
+- Case studies
+    - LeNet/AlexNet/ZF Net: stacking multiple convolution layers before pooling
+    - GoogLeNet: Inception module (?) that reduces number of parameters.
+    - VGGNet: demonstrates that depth of neural net can be critical (16 conv/fc layers)
+    - ResNet: as of 2016, state of the art. Heavy use of batch norm and skip connections (?).
