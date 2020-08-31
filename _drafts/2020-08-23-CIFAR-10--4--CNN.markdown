@@ -134,3 +134,15 @@ Reference: https://cs231n.github.io/convolutional-networks/
     - GoogLeNet: Inception module (?) that reduces number of parameters.
     - VGGNet: demonstrates that depth of neural net can be critical (16 conv/fc layers)
     - ResNet: as of 2016, state of the art. Heavy use of batch norm and skip connections (?).
+
+### Miscellaneous
+- General computer vision techniques
+  - Data augmentation
+    - To increase training data, 
+      - randoms-size crop: can extract rectangles with random coordinates from a raw image. 
+      - horizontal flip
+      - color jittering
+  - Test time techniques
+    - Can also use the data augmentation techniques at test time (multiple passes to classify one image); can also pass same image at different resolution levels.
+  - Gradient boosting in neural nets
+    - "Skip/Shortcut connection" idea in ResNet is effectively gradient boosting, with deep layers learning the residues (contrast to GBDT, where "same"/"similar" learners learn the residue).
